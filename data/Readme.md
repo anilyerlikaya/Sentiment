@@ -1,0 +1,1 @@
+The dataset used in this project can be found on Kaggle: [IMDB Dataset](https://www.kaggle.com/datasets/columbine/imdb-dataset-sentiment-analysis-in-csv-format). It consists of movie reviews with relatively longer sentences, allowing for more in-depth sentiment analysis.
