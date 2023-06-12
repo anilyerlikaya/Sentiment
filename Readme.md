@@ -26,17 +26,17 @@ The project is structured as follows:
 
 ## Usage
 
-1. Clone the repository:
-git clone ...
+1. Clone the repository: \
+git clone https://github.com/anilyerlikaya/Sentiment.git
 
-2. (Optional) Create a new conda environment
-conda create -n sentiment python=3.10
+2. (Optional) Create a new conda environment \
+conda create -n sentiment python=3.10 \
 conda activate sentiment
 
-3. Install the required dependencies
+3. Install the required dependencies \
 pip install -r requirements.txt
 
-4. Train the Model
+4. Train the Model \
 python tools/train.py --trainset-path "path to the train set" --valset-path "path to the validation set" --model-name "svm" --train-size 5000 --test_size 1000 --epochs 300
 
 ## License

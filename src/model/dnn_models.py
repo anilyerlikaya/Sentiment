@@ -20,13 +20,14 @@ class GRUDNNModel(nn.Module, BaseSentimentModel):
         self.input_size = input_dim
         self.hidden_units = hidden_dim
         self.output_size = output_dim
-        print(f"device: {self.device}, input_size: {self.input_size}, hidden: {self.hidden_units}, output: {self.output_size}")
+        #print(f"device: {self.device}, input_size: {self.input_size}, hidden: {self.hidden_units}, output: {self.output_size}")
         
         # layers
         self.embedding = nn.Embedding(self.input_size, self.hidden_units)
         self.gru = nn.GRU(batch_first=True, input_size=self.hidden_units, hidden_size=self.hidden_units//2, bidirectional=True)
-        self.activation = nn.ReLU()
+        self.dropout = nn.Dropout(0.2)
         self.fc = nn.Linear(self.hidden_units, self.output_size)
+        self.sigmoid = nn.Sigmoid()
             
         return
     
@@ -34,19 +35,24 @@ class GRUDNNModel(nn.Module, BaseSentimentModel):
         return f"GRUDNNMODEL(\n\t{self.embedding}\n\t{self.gru}\n\t{self.fc}\n)"
     
     def forward(self, inputs: torch.Tensor):
+        batch_size = inputs.shape[0]   
         output_embed = self.embedding(inputs)
+        
         output_gru, _ = self.gru(output_embed)
-        output_gru = output_gru.permute(1, 0, 2)  
-        output_gru = self.activation(output_gru)
-        outputs = self.fc(output_gru[-1])              
-        return outputs
+        output_gru = output_gru.contiguous().view(-1, self.hidden_units)
+        outputs = self.dropout(output_gru)
+        
+        outputs = self.fc(outputs)
+        outputs = self.sigmoid(outputs)
+        outputs = outputs.view(batch_size, -1)[:, -1] # last batch
+        return outputs.squeeze()
 
     def train_pipeline(self, X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray, y_test: np.ndarray):        
-        criterion = nn.CrossEntropyLoss(reduction="sum")
+        criterion = nn.BCELoss(reduction="sum")
         optimizer = optim.Adam(self.parameters(), lr=3e-4)
         
         X_train = torch.from_numpy(X_train)
-        y_train = torch.from_numpy(y_train)
+        y_train = torch.from_numpy(y_train).float()
         X_test = torch.from_numpy(X_test)
 
         #for epoch in tqdm(range(self.epochs), desc="GRU-DNN Model Training"):
@@ -70,8 +76,7 @@ class GRUDNNModel(nn.Module, BaseSentimentModel):
             test_preds = self.predict_pipeline(X_test)
             train_acc = self.get_accuracy(y_train, train_preds)
             test_acc = self.get_accuracy(y_test, test_preds)
-            print(f"Epoch {epoch + 1}/{self.epochs}, Loss: {epoch_loss / len(X_train)}, train_acc: {train_acc}, test_acc: {test_acc}")
-            
+            print(f"Epoch {epoch + 1}/{self.epochs}, Loss: {epoch_loss / len(X_train)}, train_acc: {train_acc}, test_acc: {test_acc}")      
         print("Train Completed\n")
         return
 
@@ -79,5 +84,5 @@ class GRUDNNModel(nn.Module, BaseSentimentModel):
         self.eval()
         with torch.no_grad():
             outputs = self(X_test)
-            _, predicted = torch.max(outputs.data, 1)
-            return predicted.cpu().numpy()
+            preds = torch.round(outputs)
+            return preds.cpu().numpy()

@@ -7,6 +7,7 @@ import sys, os
 sys.path.append(os.getcwd())
 from src import sentiment_dataloader
 from src import select_model
+import torch
 
 def train(trainset_path: str, testset_path: str, model_name: str = "svm", trainset_size: int = 100, testset_size: int = 100, epochs: int = 300, max_feature: int = 1000):
     print(f"trainset_path: {trainset_path}, \ntestset_path: {testset_path}, \nmodel_type: {model_name}")
@@ -19,9 +20,9 @@ def train(trainset_path: str, testset_path: str, model_name: str = "svm", trains
     
     model.train_pipeline(train_set.X, train_set.labels, test_set.X, test_set.labels)
     
-    acc_train = model.get_accuracy(train_set.labels, model.predict_pipeline(train_set.X))
+    acc_train = model.get_accuracy(train_set.labels, model.predict_pipeline(torch.from_numpy(train_set.X) if model_name == "gru" else train_set.X))
     print(f"acc_train: {acc_train}")
-    acc_test = model.get_accuracy(test_set.labels, model.predict_pipeline(test_set.X))
+    acc_test = model.get_accuracy(test_set.labels, model.predict_pipeline(torch.from_numpy(test_set.X) if model_name == "gru" else test_set.X))
     print(f"acc_test: {acc_test}")
     
     return
