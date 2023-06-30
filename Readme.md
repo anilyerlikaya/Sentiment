@@ -11,7 +11,8 @@ This project focuses on sentiment analysis for customer messages using machine l
     - Random Forest (RF)
     - GRU-DNN (Gated Recurrent Unit - Deep Neural Network)
 - Train the models on the training set and evaluate their performance on the test set.
-- Load checkpoints for all type of models. (Will be added)
+    - Loss&Acc plot. 
+- Load checkpoints for all type of models. 
 - Data Pipeline for model usage on real time data. (Will be added)
 - Containerize the final model using Docker for easy deployment and reproducibility. (Will be added)
 

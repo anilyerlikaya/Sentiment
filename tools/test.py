@@ -9,20 +9,18 @@ from src import sentiment_dataloader, select_model, load_model
 from src.data import SentimentDataset
 from src.model import BaseSentimentModel
 
-def test(model_path: str, model_type: str, testset_path: str, testset_size: int = 1000, max_feature: int = 1000, \
+def test(model_path: str = "", model_type: str = "", testset_path: str = "", testset_size: int = 1000, max_feature: int = 1000, \
          vectorizer: CountVectorizer = None, train_test_set: SentimentDataset = None, test_model: BaseSentimentModel = None):
     is_train = test_model != None
    
     model = select_model(model_type, input_dim=max_feature, hidden_dim=128, output_dim=2) if not is_train else test_model
     if not is_train:
+        print(model)  
         vectorizer = load_model(model, model_type, model_path)
-    print(model)  
     dataset = sentiment_dataloader(testset_path, train_size=testset_size, vectorizer=vectorizer, is_train=False) if not is_train else train_test_set
     
     acc_test = model.get_accuracy(dataset.labels, model.predict_pipeline(torch.from_numpy(dataset.X) if model_type == "gru" else dataset.X))
-    print(f"Test accuracy: {acc_test}")
-    
-    return
+    return acc_test
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Sentiment Analysis on IMDB Movie Reviews")
@@ -35,4 +33,6 @@ if __name__ == "__main__":
     
     # argparse.Namespace => dict => list of values     
     args = [*vars(args).values()]   
-    test(*args)
+    acc_test = test(*args)
+    print(f"Test accuracy: {acc_test}")
+
