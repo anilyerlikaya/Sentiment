@@ -7,5 +7,5 @@ def sentiment_dataloader(data_path: str, train_size: int = 1000, vectorizer: Cou
     if not os.path.exists(data_path):
         raise RuntimeError("{} not found!".format(data_path))
     
-    dataset = SentimentDataset(data_path, train_size=train_size, vectorizer=vectorizer, max_feature=max_feature, is_train=is_train)  
+    dataset = SentimentDataset(data_path, train_size=train_size, vectorizer=vectorizer, max_feature=max_feature, is_train=is_train)      
     return dataset

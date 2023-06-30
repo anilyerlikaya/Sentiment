@@ -20,6 +20,7 @@ class SVMModel(BaseSentimentModel):
     def predict_pipeline(self, X_test: np.ndarray):
         return self.model.predict(X_test)
 
+
 class RandomForestModel(BaseSentimentModel):
     def __init__(self, verbose: bool = False):
         super().__init__()

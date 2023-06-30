@@ -1,4 +1,5 @@
 from .base import BaseSentimentModel
+import copy
 import numpy as np
 #from tqdm import tqdm
 
@@ -29,10 +30,16 @@ class GRUDNNModel(nn.Module, BaseSentimentModel):
         self.fc = nn.Linear(self.hidden_units, self.output_size)
         self.sigmoid = nn.Sigmoid()
             
+        self.setup()
         return
     
     def __str__(self):
         return f"GRUDNNMODEL(\n\t{self.embedding}\n\t{self.gru}\n\t{self.fc}\n)"
+    
+    def setup(self):
+        self.criterion = nn.BCELoss(reduction="sum")
+        self.optimizer = optim.Adam(self.parameters(), lr=3e-4)
+        return
     
     def forward(self, inputs: torch.Tensor):
         batch_size = inputs.shape[0]   
@@ -48,12 +55,15 @@ class GRUDNNModel(nn.Module, BaseSentimentModel):
         return outputs.squeeze()
 
     def train_pipeline(self, X_train: np.ndarray, y_train: np.ndarray, X_test: np.ndarray, y_test: np.ndarray):        
-        criterion = nn.BCELoss(reduction="sum")
-        optimizer = optim.Adam(self.parameters(), lr=3e-4)
-        
         X_train = torch.from_numpy(X_train)
         y_train = torch.from_numpy(y_train).float()
         X_test = torch.from_numpy(X_test)
+        y_test_torch = torch.from_numpy(y_test).float()
+
+        # keep best
+        best_state_dict = copy.deepcopy(self.state_dict())
+        best_acc_epoch = -1
+        best_test_acc = -1.0
 
         #for epoch in tqdm(range(self.epochs), desc="GRU-DNN Model Training"):
         for epoch in range(self.epochs):
@@ -64,25 +74,37 @@ class GRUDNNModel(nn.Module, BaseSentimentModel):
                 inputs = X_train[i:i + self.batch_size]
                 labels = y_train[i:i + self.batch_size]
 
-                optimizer.zero_grad()
+                self.optimizer.zero_grad()
                 outputs = self(inputs)
-                loss = criterion(outputs, labels)
+                loss = self.criterion(outputs, labels)
                 loss.backward()
-                optimizer.step()
+                self.optimizer.step()
 
                 epoch_loss += loss.item()
 
             train_preds = self.predict_pipeline(X_train)
-            test_preds = self.predict_pipeline(X_test)
+            test_preds, test_loss = self.predict_pipeline(X_test, y_test_torch)
             train_acc = self.get_accuracy(y_train, train_preds)
             test_acc = self.get_accuracy(y_test, test_preds)
-            print(f"Epoch {epoch + 1}/{self.epochs}, Loss: {epoch_loss / len(X_train)}, train_acc: {train_acc}, test_acc: {test_acc}")      
+            print(f"Epoch {epoch + 1}/{self.epochs}, Train Loss: {epoch_loss / len(X_train)}, Test Loss: {test_loss}, train_acc: {train_acc}, test_acc: {test_acc}")      
+            
+            if test_acc > best_test_acc:
+                best_test_acc = test_acc
+                best_acc_epoch = epoch
+                best_state_dict = copy.deepcopy(self.state_dict())
+            
         print("Train Completed\n")
+        print(f"Acquired best accuracy in epoch {best_acc_epoch} and test_acc is {best_test_acc} => Loaded current model state_dict from the best one.")
+        self.load_state_dict(best_state_dict)        
+        
         return
 
-    def predict_pipeline(self, X_test: torch.Tensor):
+    def predict_pipeline(self, X_test: torch.Tensor, y_test: torch.Tensor = None):
         self.eval()
         with torch.no_grad():
             outputs = self(X_test)
             preds = torch.round(outputs)
+            if y_test is not None:
+                test_loss = self.criterion(outputs, y_test)
+                return preds.cpu().numpy(), test_loss
             return preds.cpu().numpy()

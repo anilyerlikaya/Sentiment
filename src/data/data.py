@@ -22,6 +22,7 @@ class SentimentDataset():
         
         self.is_train = is_train
         self.max_feature_size = max_feature
+        print(f"data => vectorized: {vectorizer}")
         self.vectorizer = CountVectorizer(max_features=self.max_feature_size) if vectorizer is None else vectorizer
         
         self.data = pd.read_csv(data_path)
@@ -29,7 +30,7 @@ class SentimentDataset():
         self.train_size = train_size if train_size < self.data_size and train_size > 0 else self.data_size
         
         # Shuffle the dataset to randomize the order of reviews
-        self.data = self.data.sample(frac=1, random_state=random.randint(0, 9999)).reset_index(drop=True)
+        # self.data = self.data.sample(frac=1, random_state=random.randint(0, 9999)).reset_index(drop=True)
 
         self.messages = self.data[self.data.columns[0]].tolist()[:self.train_size]
         self.labels = self.data[self.data.columns[1]][:self.train_size]
@@ -79,7 +80,7 @@ class SentimentDataset():
     def preprocess_message(self):
         # data holder for preprocessed_messages
         local_preprocessed_messages = []
-        for message in tqdm(self.messages, desc="Message Data Preprocess"):
+        for message in tqdm(self.messages, desc="Data Preprocess"):
             # Remove special characters and digits
             text = re.sub('[^a-zA-Z]', ' ', message)
             

@@ -3,6 +3,7 @@ from sklearn.metrics import accuracy_score
 
 class BaseSentimentModel(object):
     def __init__(self):
+        self.model = None
         pass
     
     def train_pipeline(self, X_train, y_train, X_test, y_test):
